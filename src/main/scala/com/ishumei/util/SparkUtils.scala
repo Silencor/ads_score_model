@@ -13,7 +13,6 @@ object SparkUtils {
       .appName(appName)
       .config("spark.sql.parquet.compression.codec", "GZIP")
       .config("compression", "gzip")
-      .config("spark.debug.maxToStringFields", "10000")
       .config("spark.sql.shuffle.partitions", 200)
       .enableHiveSupport()
       .getOrCreate()

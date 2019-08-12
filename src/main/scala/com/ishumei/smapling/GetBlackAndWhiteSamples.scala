@@ -59,5 +59,7 @@ object GetBlackAndWhiteSamples {
     // requestId,organization,tokenId,advertiseScore,text
     // 所有广告分大于500的事件
     samplesResult.write.csv(s"/user/data/tianwang/niujian/ads_score_v0.2/allSamples/$date")
+
+    samplesResult.count()
   }
 }
