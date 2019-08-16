@@ -42,7 +42,7 @@ object GetBlackAndWhiteFeatures {
 
     import java.util.Date
     val date = "dt=20190811"
-    val orgFeatures = spark.sparkContext.textFile(s"/user/data/tianwang/niujian/ads_score_v0.2/dataSet/test_org_feature/$date/")
+    val orgFeatures = spark.sparkContext.textFile(s"/user/data/tianwang/niujian/ads_score_v0.2/org_features/$date/")
     val allFeatures = orgFeatures.map(row => {
       val features = row.split(",")
 
@@ -160,7 +160,9 @@ object GetBlackAndWhiteFeatures {
     }).filter(str => !str.equals(""))
 
     // org \001 token \001 feature0 \t feature1... \001 label
-    allFeatures.saveAsTextFile(s"/user/data/tianwang/niujian/ads_score_v0.2/trainDataSet/testSet_all_feature/$date")
+    allFeatures.saveAsTextFile(s"/user/data/tianwang/niujian/ads_score_v0.2/features/$date")
+
+    //-------分割为训练集与测试集
   }
 
   /**
@@ -174,8 +176,8 @@ object GetBlackAndWhiteFeatures {
     val spark = SparkUtils.getSparkSession("GetBlackAndWhiteFeatures")
 
     // 读取样本数据
-    val allSet = spark.read.option("header", "true").csv("/user/data/tianwang/niujian/ads_score_v0.2/dataSet/testSet.csv")
-    allSet.createOrReplaceTempView("allSet")
+    val allSamples = spark.read.option("header", "true").csv("/user/data/tianwang/niujian/ads_score_v0.2/features/allSamples.csv")
+    allSamples.createOrReplaceTempView("allSamples")
 
     val date = "dt=20190811"
     // 读取ae数据
@@ -325,9 +327,9 @@ object GetBlackAndWhiteFeatures {
         |b.features.`profile.activity_first_time` as `profile.activity_first_time`,
         |a.label
         |from org_features b
-        |join allSet a
+        |join allSamples a
         |on a.requestId = b.requestId
-      """.stripMargin).write.csv(s"/user/data/tianwang/niujian/ads_score_v0.2/dataSet/test_org_feature/$date")
+      """.stripMargin).write.csv(s"/user/data/tianwang/niujian/ads_score_v0.2/org_features/$date")
   }
 
   /**

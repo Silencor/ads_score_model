@@ -1,6 +1,6 @@
 package com.ishumei.training
 
-import scala.collection.mutable.Set
+import scala.collection.mutable
 import scala.io.Source
 
 /**
@@ -12,35 +12,40 @@ import scala.io.Source
   */
 object SampleCheck {
   val orgPath = "D:\\SM\\数美科技-数据挖掘\\广告导流\\ads_score_v0.2\\样本抽取"
-  def main(args: Array[String]): Unit = {
-    //dropDupWhiteSample()
 
-    // checkBlackAndWhite
+  def main(args: Array[String]): Unit = {
+    //processSample()
+
+    //checkBlackAndWhite
 
     checkTrainAndTest()
   }
 
-  def checkTrainAndTest() : Unit = {
-    val blackSet = Set[String]()
-    val whiteSet = Set[String]()
+  def checkTrainAndTest(): Unit = {
+    val blackSet = mutable.Set[String]()
+    val whiteSet = mutable.Set[String]()
 
     val blackSource = Source.fromFile("D:\\SM\\数美科技-数据挖掘\\广告导流\\ads_score_v0.2\\特征关联\\trainSet", "UTF-8")
-    blackSource.getLines.foreach(l => blackSet.add(l.split("\001")(0) + "," +  l.split("\001")(1)))
+    blackSource.getLines.foreach(l => {
+
+      blackSet.add(l.split("\001")(0) + l.split("\001")(1))
+    })
+
     val whiteSource = Source.fromFile("D:\\SM\\数美科技-数据挖掘\\广告导流\\ads_score_v0.2\\特征关联\\testSet", "UTF-8")
-    whiteSource.getLines.foreach(l => whiteSet.add(l.split("\001")(0) + "," + l.split("\001")(1)))
+    whiteSource.getLines.foreach(l => whiteSet.add(l.split("\001")(0) + l.split("\001")(1)))
 
     val set = blackSet & whiteSet
     println(set.size)
     set.foreach(s => println(s))
   }
 
-  def checkBlackAndWhite() : Unit = {
-    val blackSet = Set[String]()
-    val whiteSet = Set[String]()
+  def checkBlackAndWhite(): Unit = {
+    val blackSet = mutable.Set[String]()
+    val whiteSet = mutable.Set[String]()
 
-    val blackSource = Source.fromFile(orgPath + "\\blackSample.csv", "UTF-8")
+    val blackSource = Source.fromFile("D:\\SM\\数美科技-数据挖掘\\广告导流\\ads_score_v0.2\\样本抽取\\blackSampleReq.csv", "UTF-8")
     blackSource.getLines.foreach(l => blackSet.add(l.split(",")(1) + l.split(",")(2)))
-    val whiteSource = Source.fromFile(orgPath + "\\whiteSample.csv", "UTF-8")
+    val whiteSource = Source.fromFile("D:\\SM\\数美科技-数据挖掘\\广告导流\\ads_score_v0.2\\样本抽取\\whiteSampleReq.csv", "UTF-8")
     whiteSource.getLines.foreach(l => whiteSet.add(l.split(",")(1) + l.split(",")(2)))
 
     val set = blackSet & whiteSet
@@ -48,20 +53,19 @@ object SampleCheck {
     set.foreach(s => println(s))
   }
 
-  /**
-    * 样本去重
-    */
-  def dropDupWhiteSample() : Unit = {
-    val set = Set[String]()
+  def processSample(): Unit = {
+    val set = mutable.Set[String]()
 
-    val source = Source.fromFile(orgPath + "\\blackSample.csv", "UTF-8")
+    val source = Source.fromFile("D:\\SM\\数美科技-数据挖掘\\广告导流\\ads_score_v0.2\\特征关联\\trainSet", "UTF-8")
     val lineIterator = source.getLines
 
-    for (l <- lineIterator) {
-      set.add(l)
-    }
+    var black = 0
 
-    println(set.size)
-    set.foreach(s => println(s))
+    for (l <- lineIterator) {
+      if (l.split("\001")(3) == "1")
+        black += 1
+
+    }
+    println(black)
   }
 }
