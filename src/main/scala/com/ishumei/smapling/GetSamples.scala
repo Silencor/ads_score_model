@@ -86,19 +86,28 @@ object GetSamples {
     val spark = SparkUtils.getSparkSession("GetWhiteSamples")
 
     val date = "dt=20190811"
-    import org.apache.spark.sql.types.{StringType, StructField, StructType, LongType}
+    import org.apache.spark.sql.types.{StringType, StructField, StructType, IntegerType}
     val samplesSchema = StructType(
       StructField("requestId", StringType, true) ::
         StructField("organization", StringType, true) ::
         StructField("tokenId", StringType, true) ::
-        StructField("result.rule-engine.advertiseScore", LongType, true) ::
-        StructField("result.rule-engine.riskLevel", StringType, true) ::
-        StructField("data.text", StringType, true) ::
+        StructField("features", StructType(
+          StructField("advertise.score", IntegerType, true) ::
+            Nil), true
+        ) ::
+        StructField("data", StructType(
+          StructField("text", StringType, true) ::
+            Nil), true
+        ) ::
+        StructField("result", StructType(
+          StructField("rule-engine", StructType(
+            StructField("riskLevel", StringType, true) ::
+              Nil
+          ), true) ::
+            Nil), true
+        ) ::
         Nil
     )
-
-    val whiteSamples = spark.read.schema(samplesSchema).parquet(s"/user/data/parquet/ae/$date/serviceId=POST_TEXT")
-    whiteSamples.createOrReplaceTempView("whiteSamples")
 
     def processText(text: String): String = {
       val str = text.replace("\n\r", "~")
@@ -107,24 +116,29 @@ object GetSamples {
 
     spark.udf.register("processText", processText _)
 
+    val whiteSamples = spark.read.schema(samplesSchema).json(s"/user/data/event/detail_ae/$date/serviceId=POST_TEXT/")
+    whiteSamples.createOrReplaceTempView("whiteSamples")
+
     val samplesResult = spark.sql(
       """
         |SELECT
         |requestId,
         |organization,
         |tokenId,
-        |`result.rule-engine.riskLevel` AS riskLevel,
-        |`result.rule-engine.advertiseScore` AS advertiseScore,
-        |processText(`data.text`) AS text
+        |result.`rule-engine`.riskLevel AS riskLevel,
+        |features.`advertise.score` AS advertiseScore,
+        |processText(data.text) AS text
         |FROM whiteSamples
-        |WHERE `result.rule-engine.riskLevel`='PASS'
-        |AND `result.rule-engine.advertiseScore`>500
+        |WHERE result.`rule-engine`.riskLevel='PASS' AND features.`advertise.score`>500
         |ORDER BY organization,tokenId
       """.stripMargin)
+
     samplesResult.printSchema()
 
-    samplesResult.count() // 251,267,250
+    samplesResult.count() // 1310350
+    samplesResult.write.csv(s"/user/data/tianwang/niujian/ads_score_v0.2.1/whiteSamples/$date")
 
-    samplesResult.sample(false, 0.001).write.csv(s"/user/data/tianwang/niujian/ads_score_v0.2/whiteSamples/$date")
+    val result = spark.read.csv(s"/user/data/tianwang/niujian/ads_score_v0.2.1/whiteSamples/$date")
+    result.sample(false,0.1).write.csv(s"/user/data/tianwang/niujian/ads_score_v0.2.1/whiteSamples_0.1/$date")
   }
 }
